@@ -23,19 +23,49 @@ OBJECTS_DEPS = {"dobj", "dative", "attr", "oprd", "pobj"}
 NLP = spacy.load("en_core_web_trf")
 
 
+class Color:
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    RESET = '\033[0m'
+
+
 def log(*args, **kwargs):
     '''
-    print colorize debug log
-    color = ["red", "yellow"]
+    print colorize debug log.
 
+    colorset:
+        - yellow: yellow, warning (default)
+        - red: red, error, danger
+        - blue: info, blue
+        - green:  success, ok, green
     Example
     ---------
-    >>> log("a","b","c", color='\\033[91m')
+    >>> log("a","b","c", color='danger')
     '''
     if DEBUGMODE:
-        color = kwargs["color"] if "color" in kwargs else '\033[93m'
+        color = ""
+        tag = ""
+        if "color" in kwargs and isinstance(kwargs["color"], str):
+            kc = kwargs["color"].lower()
+            if kc in ["yellow", "warning"]:
+                color = Color.YELLOW
+                tag = "WARN"
+            elif kc in ["red", "error", "danger"]:
+                color = Color.RED
+                tag = "ERROR"
+            elif kc in ["blue", "info"]:
+                color = Color.BLUE
+                tag = "INFO"
+            elif kc in ["success", "ok", "green"]:
+                color = Color.GREEN
+                tag = "PASS"
+        else:
+            tag = "WARN"
+            color = Color.YELLOW
         args_str = ' '.join(map(str, args))
-        print("{}[DEBUG] {}{}".format(color, args_str, "\033[0m"))
+        print("{}[{}] {}{}".format(color, tag, args_str, Color.RESET))
 
 
 def show_tree(doc: Doc):
@@ -323,24 +353,86 @@ def SVOParse(doc: Doc):
     return svos
 
 
+def verb_validaty_check(V_token: Doc) -> bool:
+    '''
+    Check the given verb contains noun phrase
+    '''
+    for token in V_token:
+        if token.pos_ in SUBJECT_DEPS or token.pos_ in OBJECTS_DEPS:
+            return False
+    return True
+
+
+def verb_subset_check(V: str, solution_V: str) -> bool:
+    '''
+    Check solution_S is a subset of S
+    '''
+    given_set = set(V.split())
+    expected_set = set(solution_V.split())
+    return expected_set <= given_set
+
+
+def subobj_check(get: str, solution: str) -> bool:
+    '''
+    Check get is a subset of solution
+    '''
+    if get not in solution:
+        return False
+    return True
+
+
+def noun_check(doc: Doc) -> bool:
+    '''
+    Check if noun, pron propn in given doc
+    '''
+    for token in doc:
+        if token.pos_ in {"NOUN", "PRON", "PROPN"}:
+            return True
+    return False
+
+
 def CompareSimilarity(S: str, V: str, O: str, answerList: List[List[str]], threshold: float = 0.9) -> Literal[0, 1]:
     '''
-    Compare similarity between
+    Compare similarity
     '''
+    S_doc = NLP(S)
+    V_doc = NLP(V)
+    O_doc = NLP(O)
+
+    # Check Verb is valid
+    if not verb_validaty_check(V_doc):
+        return 0
+
+    if not noun_check(S_doc):
+        return 0
+
+    if not noun_check(O_doc):
+        return 0
+
     for sentence in answerList:
-        S_check, V_check, O_check = False, False, False
         for solution in sentence:
-            S_value = NLP(S).similarity(NLP(solution[0]))
-            V_value = NLP(V).similarity(NLP(solution[1]))
-            O_value = NLP(O).similarity(NLP(solution[2]))
+            S_check, V_check, O_check = False, False, False
+            S_value = S_doc.similarity(NLP(solution[0]))
+            V_value = V_doc.similarity(NLP(solution[1]))
+            O_value = O_doc.similarity(NLP(solution[2]))
+            # Check Subject
             if S_value > threshold:
                 S_check = True
+            elif subobj_check(S, solution[0]):
+                S_check = True
+            # Check Verb
             if V_value > threshold:
                 V_check = True
+            elif verb_subset_check(V, solution[1]):
+                V_check = True
+            # Check Object
             if O_value > threshold:
                 O_check = True
-        if S_check and V_check and O_check:
-            return 1
+            elif subobj_check(O, solution[2]):
+                O_check = True
+            # If three check is passed, return 1
+            if S_check and V_check and O_check:
+                return 1
     return 0
 
 
@@ -354,7 +446,7 @@ def read_CSV(path: str) -> pd.DataFrame:
 
 
 def main():
-    path = "answer_enhance_lg_threshold_90.csv"
+    path = "answer_enhance_trf_threshold_90_check.csv"
     labels = []
     df = read_CSV("data.csv")
     for i in range(len(df)):
