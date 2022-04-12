@@ -8,6 +8,7 @@ Paper Reference:
 https://www.researchgate.net/publication/228905420_Triplet_extraction_from_sentences
 '''
 
+import re
 from typing import List, Literal, Set, Tuple, Union
 import pandas as pd
 import spacy
@@ -482,10 +483,31 @@ def read_CSV(path: str) -> pd.DataFrame:
     return df
 
 
+def removeSign(x: str):
+    '''
+    Remove (` , '',  \") from the original text.
+    '''
+    x1 = re.sub("`+|'{2}|\"", " ", x)
+    x2 = re.sub(' +', ' ', x1)
+    return x2
+
+
+def preprocessCSV(df: pd.DataFrame):
+    '''
+    Replace bad sign
+    '''
+    df["S"] = df["S"].apply(removeSign)
+    df["V"] = df["V"].apply(removeSign)
+    df["O"] = df["O"].apply(removeSign)
+    df["sentence"] = df["sentence"].apply(removeSign)
+    return df
+
+
 def main():
-    path = "answer_trf_threshold_90_checkpassive.csv"
+    path = "answer_trf_threshold_90_checkpassive_preprocess.csv"
     labels = []
     df = read_CSV("data.csv")
+    df = preprocessCSV(df)
     for i in range(len(df)):
         if i % 20 == 0:
             print("Perform on row {}".format(i))
@@ -504,6 +526,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # doc = NLP("But Aftonbladet said Chatty was interviewed by the police after Sept. 11 and subsequently made a pilgrimage to Mecca .")
+    # doc = NLP("For one thing , members of Congress and their staffs have a traditional `` defined benefit '' program , meaning that they know exactly what they 'll get upon retirement .")
     # show_tree(doc)
     # print(SVOParse(doc))
