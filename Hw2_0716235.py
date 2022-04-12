@@ -201,7 +201,7 @@ def FindSubjects(verb: Token):
 
 def FindObjectsFromPrepositions(tokens: List[Token]):
     '''
-    從介係詞中抽取obj
+    從介係詞中抽取obj, 例如被動語態的 by ...
     '''
     extra = []
     for t in tokens:
@@ -272,13 +272,28 @@ def FindObjectsNounClause(verb: Token) -> Union[Token, None]:
     return None
 
 
+def is_passive_verb(verb: Token) -> bool:
+    '''
+    Check if a verb is passive, find auxpass dep_ from its left child
+    '''
+    for child in verb.lefts:
+        if child.dep_ == "auxpass":
+            return True
+    return False
+
+
 def FindObjects(verb: Token) -> List[Token]:
     '''
     Find objects from the right children of verb
     '''
     right_children = list(verb.rights)
+    objs = []
+    if is_passive_verb(verb):
+        objs = [t for t in right_children if t.dep_ in OBJECTS_DEPS or t.dep_ in {
+            "prep", "agent"}]
+    else:
+        objs = [t for t in right_children if t.dep_ in OBJECTS_DEPS]
 
-    objs = [t for t in right_children if t.dep_ in OBJECTS_DEPS]
     prep_obj = FindObjectsFromPrepositions(objs)
     objs.extend(prep_obj)
 
@@ -468,7 +483,7 @@ def read_CSV(path: str) -> pd.DataFrame:
 
 
 def main():
-    path = "answer_trf_threshold_90_doubleverb.csv"
+    path = "answer_trf_threshold_90_checkpassive.csv"
     labels = []
     df = read_CSV("data.csv")
     for i in range(len(df)):
@@ -489,6 +504,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # doc =  NLP("The nation 's health maintenance organizations were required to tell the federal government by midnight Monday whether they plan to continue providing health insurance to Medicare recipients next year , raise premiums , or reduce benefits .")
+    # doc = NLP("But Aftonbladet said Chatty was interviewed by the police after Sept. 11 and subsequently made a pilgrimage to Mecca .")
     # show_tree(doc)
     # print(SVOParse(doc))
