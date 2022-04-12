@@ -101,6 +101,24 @@ def FindVerb(token: Token) -> List[Token]:
     return verbs
 
 
+def FindContinuosVerb(verb: Token) -> Token:
+    '''
+    Example
+    --------
+    I am considering selling the house.
+    for verb "considering", 
+    we have to return the verb selling 
+
+    They planned to make a cake for their mother.
+    for verb "plan"
+    we have to return "make"
+    '''
+    for child in verb.rights:
+        if child.pos_ == "VERB" and child.dep_ == "xcomp":
+            return FindContinuosVerb(child)
+    return verb
+
+
 def FindSubjectsInConj(subs: List[Token]):
     '''
     Find subjects which connects by conj recursively.
@@ -338,8 +356,9 @@ def SVOParse(doc: Doc):
         log("Get Verbs: ", verbs)
         visited = set()
         for v in verbs:
+            possible_v = FindContinuosVerb(v)
             subjects = FindSubjects(v)
-            objects = FindObjects(v)
+            objects = FindObjects(possible_v)
             log("Subject Find", subjects)
             log("Object Find", objects)
             for s in subjects:
@@ -347,6 +366,9 @@ def SVOParse(doc: Doc):
                     log("Extract from", s, o, color="\033[92m")
                     subs = Expand(s, sent, visited)
                     objs = Expand(o, sent, visited)
+                    if possible_v != v:
+                        svo.append(
+                            (JoinTokens(subs), possible_v.text, JoinTokens(objs)))
                     svo.append(
                         (JoinTokens(subs), v.text, JoinTokens(objs)))
         svos.append(svo)
@@ -446,7 +468,7 @@ def read_CSV(path: str) -> pd.DataFrame:
 
 
 def main():
-    path = "answer_enhance_trf_threshold_90_check.csv"
+    path = "answer_trf_threshold_90_doubleverb.csv"
     labels = []
     df = read_CSV("data.csv")
     for i in range(len(df)):
@@ -467,3 +489,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # doc =  NLP("The nation 's health maintenance organizations were required to tell the federal government by midnight Monday whether they plan to continue providing health insurance to Medicare recipients next year , raise premiums , or reduce benefits .")
+    # show_tree(doc)
+    # print(SVOParse(doc))
