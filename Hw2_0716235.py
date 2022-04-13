@@ -114,9 +114,17 @@ def FindContinuosVerb(verb: Token) -> Token:
     for verb "plan"
     we have to return "make"
     '''
-    for child in verb.rights:
+    rights = list(verb.rights)
+    for child in rights:
         if child.pos_ == "VERB" and child.dep_ == "xcomp":
             return FindContinuosVerb(child)
+
+    # VERB + CCONJ + VERB
+    if len(rights) > 1 and rights[0].pos_ == 'CCONJ':
+        for r in rights[1:]:
+            if is_verb(r):
+                return FindContinuosVerb(r)
+
     return verb
 
 
@@ -206,7 +214,7 @@ def FindObjectsFromPrepositions(tokens: List[Token]):
     '''
     extra = []
     for t in tokens:
-        if t.pos_ == "ADP" and t.dep_ in {"prep", "agent"}:
+        if t.pos_ == "ADP" and t.dep_ in {"prep", "agent", "dative"}:
             objs = [r for r in t.rights if r.dep_ in OBJECTS_DEPS or (
                 r.pos_ == "PRON")]
             extra.extend(objs)
@@ -291,9 +299,9 @@ def FindObjects(verb: Token) -> List[Token]:
     objs = []
     if is_passive_verb(verb):
         objs = [t for t in right_children if t.dep_ in OBJECTS_DEPS or t.dep_ in {
-            "prep", "agent"}]
+            "prep", "agent"} and t.dep_ not in {"npadvmod"}]
     else:
-        objs = [t for t in right_children if t.dep_ in OBJECTS_DEPS]
+        objs = [t for t in right_children if t.dep_ in OBJECTS_DEPS and t.dep_ not in {"npadvmod"}]
 
     prep_obj = FindObjectsFromPrepositions(objs)
     objs.extend(prep_obj)
@@ -489,12 +497,12 @@ def removeSign(x: str):
     '''
     x1 = re.sub("`+|'{2}|\"", " ", x)
     x2 = re.sub(' +', ' ', x1)
-    return x2
+    return x2.lower()
 
 
 def preprocessCSV(df: pd.DataFrame):
     '''
-    Replace bad sign
+    Replace bad sign and change to lowercase
     '''
     df["S"] = df["S"].apply(removeSign)
     df["V"] = df["V"].apply(removeSign)
@@ -504,7 +512,7 @@ def preprocessCSV(df: pd.DataFrame):
 
 
 def main():
-    path = "answer_trf_threshold_90_checkpassive_preprocess.csv"
+    path = "answer_trf_0413_90_fix.csv"
     labels = []
     df = read_CSV("data.csv")
     df = preprocessCSV(df)
