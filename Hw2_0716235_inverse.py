@@ -409,6 +409,8 @@ def main():
 if __name__ == "__main__":
     main()
 
+    # said that, said it 沒料
+    
     # doc = NLP("The students thought that they had met us.")
     # S, V, O = "students", "thought", "that"
 
