@@ -1,7 +1,7 @@
 # Author: Yu-Lun Hsu
 # Student ID: 0716235
 # HW ID: hw2
-# Due Date: 01/30/2022
+# Due Date: 04/16/2022
 
 '''
 Paper Reference: 
@@ -526,6 +526,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # doc = NLP("For one thing , members of Congress and their staffs have a traditional `` defined benefit '' program , meaning that they know exactly what they 'll get upon retirement .")
-    # show_tree(doc)
-    # print(SVOParse(doc))
