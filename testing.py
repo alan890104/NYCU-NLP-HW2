@@ -1,5 +1,5 @@
 import unittest
-from Hw2_0716235_inverse import *
+from Hw2_0716235 import *
 
 
 class TestInverse(unittest.TestCase):
