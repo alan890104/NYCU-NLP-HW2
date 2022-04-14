@@ -407,12 +407,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-
-    # said that, said it 沒料
-    
-    doc = NLP("that carpet cleaning company was started by a 16-year old who wound up with stock worth more than $ 100 million after his company went public .")
-    S, V, O = "who", "wound up with", "with stock"
-
-    show_tree(doc)
-    print(RulesCheck(S, V, O, doc))
+    main()
