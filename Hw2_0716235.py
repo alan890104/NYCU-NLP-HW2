@@ -275,8 +275,7 @@ def obj_in_continuos_verb(noun: Token, v: Token) -> bool:
     rights = list(v.rights)
     #  To + V or V + Ving
     for child in rights:
-        if child.pos_ == "VERB" and child.dep_ in {"xcomp"}:
-            print("I found child", child)
+        if is_verb(child) and child.dep_ in {"xcomp", "ccomp"}:
             if ObjectCheck(noun, child):
                 return True
 
@@ -390,7 +389,7 @@ def RulesCheck(S: str, V: str, O: str, doc: Doc) -> bool:
 
 
 def main():
-    path = "answer_trf_invert_time.csv"
+    path = "answer_trf_invert_auxfix.csv"
     labels = []
     df = read_CSV("data.csv")
     df = preprocessCSV(df)
@@ -415,8 +414,13 @@ def debug():
     '''
     Debug sentences
     '''
-    doc = NLP("A Spanish official , who had just finished a siesta and seemed not the least bit tense , offered what he believed to be a perfectly reasonable explanation for why the portable facilities were n't in service .")
-    S, V, O = "official", "offered", "explanation"
+    # doc = NLP("i asked the armenian native if the neighborhood kids or anybody else ever poked fun at the sign , which is basically a bart simpson dream come true .")
+    # S, V, O = "i", "asked", "fun"
+    # S, V, O = "anybody", "poked", "fun"
+    # doc = NLP("A Spanish official , who had just finished a siesta and seemed not the least bit tense , offered what he believed to be a perfectly reasonable explanation for why the portable facilities were n't in service .")
+    # S, V, O = "he","be","explanation"
+    doc = NLP("she gave me a book, kissed me, and hugged me.")
+    S, V, O = "she","gave","book"
     show_tree(doc)
     print(RulesCheck(S, V, O, doc))
 
