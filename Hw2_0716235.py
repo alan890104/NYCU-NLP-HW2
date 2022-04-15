@@ -5,13 +5,13 @@
 
 
 import re
-from typing import List, Literal, Set, Tuple, Union
+from typing import Counter, List, Tuple
+
 import pandas as pd
 import spacy
-from spacy.tokens.doc import Doc
-from spacy.tokens.span import Span
+from spacy import displacy
 from spacy.tokens import Token
-
+from spacy.tokens.doc import Doc
 
 SUBJECT_DEPS = {"nsubj", "nsubjpass", "csubj", "csubjpass", "agent", "expl"}
 OBJECT_DEPS = {"dobj", "dative", "attr", "oprd", "pobj"}
@@ -22,14 +22,14 @@ NLP = spacy.load("en_core_web_trf")
 
 def show_tree(doc: Doc):
     '''
-    Show word ,tag, dep, pos, head, left, right of given doc
+    Show word ,tag, dep, pos, ent, head, left, right of given doc
     '''
-    print('%10s %5s %10s %10s %10s %10s %10s' %
-          ("word", "tag", "dep", "pos", "head", "left", "right"))
+    print('%10s %5s %10s %10s %10s %10s %10s %10s' %
+          ("word", "tag", "dep", "pos", "entity", "head", "left", "right"))
     print('=================================================================================================')
     for word in doc:
-        print('%10s %5s %10s %10s %10s %10s %10s' %
-              (word.text, word.tag_, word.dep_, word.pos_, word.head.text, list(word.lefts), list(word.rights)))
+        print('%10s %5s %10s %10s %10s %10s %10s %10s' %
+              (word.text, word.tag_, word.dep_, word.pos_, word.ent_type_, word.head.text, list(word.lefts), list(word.rights)))
 
 
 def read_CSV(path: str) -> pd.DataFrame:
@@ -120,7 +120,7 @@ def ExtractDocIndexArr(doc: Doc, S: str, V: str, O: str) -> Tuple[bool, List[Tok
     arr_S = S.split()
     while i != len(doc) and j != len(arr_S):
         if doc[i].text == arr_S[j]:
-            if doc[i].dep_ in SUBJECT_DEPS or doc[i].pos_ in NOUN_POS and doc[i].tag_ not in {"PRP$"}:
+            if (doc[i].dep_ in SUBJECT_DEPS or doc[i].pos_ in NOUN_POS) and doc[i].tag_ not in {"PRP$"} and doc[i].ent_type_ not in {"TIME", "DATE"}:
                 collected_S.append(doc[i])
             i += 1
             j += 1
@@ -171,7 +171,9 @@ def ExtractDocIndexArr(doc: Doc, S: str, V: str, O: str) -> Tuple[bool, List[Tok
     arr_O = O.split()
     while i != len(doc) and j != len(arr_O):
         if doc[i].text == arr_O[j]:
-            if doc[i].dep_ in OBJECT_DEPS or doc[i].pos_ in NOUN_POS and doc[i].tag_ not in {"PRP$"}:
+            if (doc[i].dep_ in OBJECT_DEPS or doc[i].pos_ in NOUN_POS)\
+                    and doc[i].tag_ not in {"PRP$"}\
+                    and doc[i].ent_type_ not in {"TIME", "DATE"}:
                 collected_O.append(doc[i])
             i += 1
             j += 1
@@ -273,7 +275,8 @@ def obj_in_continuos_verb(noun: Token, v: Token) -> bool:
     rights = list(v.rights)
     #  To + V or V + Ving
     for child in rights:
-        if child.pos_ == "VERB" and child.dep_ == "xcomp":
+        if child.pos_ == "VERB" and child.dep_ in {"xcomp"}:
+            print("I found child", child)
             if ObjectCheck(noun, child):
                 return True
 
@@ -387,7 +390,7 @@ def RulesCheck(S: str, V: str, O: str, doc: Doc) -> bool:
 
 
 def main():
-    path = "answer_trf_invert.csv"
+    path = "answer_trf_invert_time.csv"
     labels = []
     df = read_CSV("data.csv")
     df = preprocessCSV(df)
@@ -401,10 +404,23 @@ def main():
             labels.append(1)
         else:
             labels.append(0)
+    print(Counter(labels))
     df["label"] = labels
+    df.to_csv("debug/"+path, index=False)
     answer = df[["id", "label"]]
     answer.to_csv(path, index=False)
 
 
+def debug():
+    '''
+    Debug sentences
+    '''
+    doc = NLP("A Spanish official , who had just finished a siesta and seemed not the least bit tense , offered what he believed to be a perfectly reasonable explanation for why the portable facilities were n't in service .")
+    S, V, O = "official", "offered", "explanation"
+    show_tree(doc)
+    print(RulesCheck(S, V, O, doc))
+
+
 if __name__ == "__main__":
-    main()
+    # main()
+    debug()

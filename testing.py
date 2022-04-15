@@ -73,6 +73,15 @@ class TestInverse(unittest.TestCase):
         for valid, S, V, O in SVOs:
             self.assertEqual(valid, RulesCheck(S, V, O,  NLP(sent)), (S,V,O))
 
+    def test_time_check(self):
+        sent = "Gallery hours are 11 a.m. to 6 p.m. daily ."
+        SVOs = [
+            [False, "Gallery hours","are","11 a.m."],
+        ]
+        for valid, S, V, O in SVOs:
+            self.assertEqual(valid, RulesCheck(S, V, O,  NLP(sent)), (S,V,O))
+
+
     def test_wh_clause_1(self):
         sent = "The nation 's health maintenance organizations were required to tell the federal government by midnight Monday whether they plan to continue providing health insurance to Medicare recipients next year , raise premiums , or reduce benefits ."
         SVOs = [
@@ -87,6 +96,16 @@ class TestInverse(unittest.TestCase):
         SVOs = [
             [True, "who","finished","a siesta"],
             [True, "A Spanish official","finished","siesta"],
+            [True, "A Spanish official","seemed","not the least bit tense"],
+            [True, "A Spanish official","offered","what"],
+        ]
+        for valid, S, V, O in SVOs:
+            self.assertEqual(valid, RulesCheck(S, V, O,  NLP(sent)), (S,V,O))
+
+    def test_incorrect_order_1(self):
+        sent = "officials at volvo , long known for safe design , acknowledge that their cars are no match for a large sport utility vehicle ."
+        SVOs = [
+            [False, "officials","at long known for","safe design"],
         ]
         for valid, S, V, O in SVOs:
             self.assertEqual(valid, RulesCheck(S, V, O,  NLP(sent)), (S,V,O))
