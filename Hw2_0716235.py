@@ -198,6 +198,9 @@ def ExtractDocIndexArr(doc: Doc, S: str, V: str, O: str) -> Tuple[bool, List[Tok
 
 
 def subj_in_conj_check(noun: Token, subs: List[Token]) -> bool:
+    '''
+    Find subjects in conjunctions.
+    '''
     exist = False
     for s in subs:
         rights = list(s.rights)
@@ -212,6 +215,9 @@ def subj_in_conj_check(noun: Token, subs: List[Token]) -> bool:
 
 
 def subj_in_ancestors(noun: Token, v: Token) -> bool:
+    '''
+    recursively find subjects in current head
+    '''
     current = v.head
     while current.pos_ != "VERB" and current.pos_ not in NOUN_POS and current.head != current:
         current = current.head
@@ -422,5 +428,5 @@ def debug():
 
 
 if __name__ == "__main__":
-    # main()
-    debug()
+    main()
+    # debug()
