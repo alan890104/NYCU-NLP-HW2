@@ -97,7 +97,9 @@ class TestInverse(unittest.TestCase):
             [True, "who","finished","a siesta"],
             [True, "A Spanish official","finished","siesta"],
             [True, "A Spanish official","seemed","not the least bit tense"],
-            [True, "A Spanish official","offered","what"],
+            # [True, "A Spanish official","offered","explanation"],
+            [True, "he","believed to be","explanation"],
+            [True, "he","believed","explanation"],
         ]
         for valid, S, V, O in SVOs:
             self.assertEqual(valid, RulesCheck(S, V, O,  NLP(sent)), (S,V,O))
